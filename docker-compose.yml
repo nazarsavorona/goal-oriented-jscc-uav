@@ -1,0 +1,16 @@
+services:
+  train:
+    build: .
+    image: semvideo:latest
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ${DATA_DIR:-/data}:/data:ro
+      - ./experiments:/workspace/experiments
+      - ${WEIGHTS_DIR:-./weights}:/workspace/weights:ro
+    runtime: nvidia
+    ipc: host
+    # Override command at runtime:
+    # docker compose run --rm train python scripts/train.py ...

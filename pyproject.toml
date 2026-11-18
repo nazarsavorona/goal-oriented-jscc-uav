@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools>=77.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "semvideo"
+version = "0.1.0"
+description = "Goal-oriented joint source-channel coding for UAV reconnaissance video under contested RF channels (code accompanying the paper)"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+authors = [
+    {name = "Nazarii Viktorovych Savorona", email = "nazarii.savorona@knu.ua"},
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "numpy>=1.26",
+    "opencv-python>=4.9",
+    "wandb>=0.18,<0.19",  # 0.19+ has Windows service startup bug
+    "einops>=0.7",
+    "tqdm",
+    "pillow",
+    "matplotlib",
+    "scipy>=1.17,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "ruff>=0.3",
+    "mypy>=1.8",
+    "ipykernel",
+    "jupyterlab",
+]
+sionna = [
+    "sionna>=0.18",
+]
+tensorrt = [
+    "tensorrt>=8.6",
+    "torch2trt",
+]
+baselines = [
+    "imageio-ffmpeg>=0.4",
+    "av>=11.0",
+    "pyldpc>=0.7",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+# N806/N812: uppercase math-style locals (B, C, H, W, K) and `torch.nn.functional as F`
+# are standard PyTorch idiom in research code; keep the rest of the N-family active.
+ignore = ["N806", "N812"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["semvideo"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
