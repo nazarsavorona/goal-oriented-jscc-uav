@@ -3,7 +3,7 @@
 Code accompanying the paper
 
 > Nazarii Savorona, Yaroslav Tereshchenko, Bohdan Bobyl.
-> **Goal-Oriented Joint Source-Channel Coding for UAV Reconnaissance Video under Contested RF
+> **Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF
 > Channels with Detector-Feature Distillation.** *Drones* (MDPI), 2026.
 
 - Paper DOI: **TBD** (to be filled in when the article is published)
@@ -38,17 +38,21 @@ Corresponding author: Nazarii Savorona, nazarii.savorona@knu.ua
 | `scripts/export_tensorrt.py`, `scripts/jetson_*.py`, `scripts/latency_profile_512.py` | ONNX export and latency measurement |
 | `tests/` | 191 unit tests of the channel models, the codec, the losses, the metrics, the statistics and the baselines |
 
-Layout: 8 files at the root, 41 scripts, 26 files under `src/semvideo/`, 15 files under `tests/`.
+Layout: 9 files at the root, 41 scripts, 26 files under `src/semvideo/`, 15 files under `tests/`.
 
 ## Installation
 
-The Docker image is the reference environment (PyTorch 2.6, CUDA 12.4).
+The Docker image is the reference environment (PyTorch 2.6, CUDA 12.4). It was built and
+smoke-tested on 23 November 2026 with ultralytics 8.4.47, opencv-python and
+opencv-python-headless 5.1.0.95, transformers 5.24.0, timm 1.0.31 and scipy 1.17.1; later
+builds may resolve newer versions of the packages that the Dockerfile does not pin.
 
 ```bash
 docker build -t semvideo:latest .
 
 docker run --rm --gpus all --ipc=host \
     -v "$PWD":/workspace \
+    -e SEMVIDEO_GIT_SHA="$(git rev-parse HEAD)" \
     -v /path/to/data:/data:ro \
     -v /path/to/third_party:/third_party:ro \
     -w /workspace semvideo:latest \
@@ -57,6 +61,13 @@ docker run --rm --gpus all --ipc=host \
 
 On hosts that use the NVIDIA runtime instead of `--gpus`, pass `--runtime=nvidia`; this is
 what `docker-compose.yml` does (`DATA_DIR=/path/to/data docker compose run --rm train ...`).
+
+The image contains no `.git`, so `scripts/train.py` records the commit in `config.json` only
+when it can run `git rev-parse HEAD` on a mounted repository. Otherwise, for example under
+`docker compose`, which mounts the data, `experiments/` and `weights/` but not the
+repository, or when git refuses a mount owned by another user, it uses `SEMVIDEO_GIT_SHA`
+and writes `unknown` if that is not set. Pass `-e SEMVIDEO_GIT_SHA=$(git rev-parse HEAD)` to
+record it in every case.
 
 Without Docker: Python 3.11 or newer, `pip install -e ".[dev]"`, plus the packages listed in
 the `Dockerfile` (`ultralytics`, `timm`, `transformers`, `torchmetrics` and others) for the
@@ -124,9 +135,11 @@ python scripts/eval_jamming_cross_corpus.py --p49-ckpt <ckpt> --snr 20 \
 python scripts/eval_erasure_cross_corpus.py --ckpt <abs path> --label P68 \
     --p-grid 0.1 0.3 0.5 --snr 10 --out <abs dir>
 
-# separated JPEG + LDPC baseline under the same jammers
+# separated JPEG + LDPC baseline under the same jammers (Table 8 settings: 30 frames,
+# 15 BP iterations; the script defaults are 100 frames and 30 iterations)
 python scripts/eval_classical_jamming_clssim.py --frames-dir /data/dji/frames_512_v1/val \
-    --label dji --snr-grid 0 5 10 15 20 25 --jnr 10 --ldpc-arm real --out <dir>
+    --label dji --n-frames 30 --bp-iter 15 --snr-grid 0 5 10 15 20 25 --jnr 10 \
+    --ldpc-arm real --out <dir>
 
 # ground-truth detection on VisDrone2019-DET test-dev, then offline scoring
 python scripts/eval_visdrone_gt_detection.py --out <dir> --codec p49=<ckpt> --cond awgn:20
@@ -172,10 +185,13 @@ exactly as it was when the reported runs were made.
 similarity between an original 1080p frame and its reconstruction. Before any codec is
 scored it runs the **bicubic control**: the frame is downsampled to 256 px and to 512 px and
 upsampled back with bicubic interpolation, with no codec and no channel, which gives the
-similarity that the resolution change alone costs. The control needs only a source video:
+similarity that the resolution change alone costs. The control needs only a source video.
+The defaults of `--frame-start` and `--frame-end` (10850 and 11800) select a segment of the
+authors' source video, so for any other video pass a frame range that it contains:
 
 ```bash
-python scripts/dinov2_metric.py --source /path/to/video.mp4 --n-frames 30 --out experiments/dinov2_metric
+python scripts/dinov2_metric.py --source /path/to/video.mp4 --frame-start 0 --frame-end 900 \
+    --n-frames 30 --out experiments/dinov2_metric
 ```
 
 Codec rows are added for every compact-codec checkpoint that matches the `CHECKPOINTS` list
@@ -191,7 +207,7 @@ and should be read from there.
 | Paper item | Script(s) | Note |
 |---|---|---|
 | Table 1 (sensitivity to the detector-feature weight) | `train.py`, `eval_deepjscc_cls.py`, `eval_r1_paired.py` | one training run per weight via `--yolo-feat-weight`; see script docstring |
-| Table 2 (training protocol of the SwinJSCC-capacity codec) | `train_swinjscc_dji.py` | the table lists this trainer's stored arguments |
+| Table 2 (training protocol of the SwinJSCC-capacity codec) | `train_swinjscc_dji.py` | the table lists the arguments stored in each checkpoint; stages 1 and 2 predate this trainer (Section 3.4) |
 | Table 3 (matched pairs on the compact codec) | `eval_r1_paired.py` | docstring: paired lift with a per-frame bootstrap interval |
 | Table 4 (decomposition of the lift) | `train.py`, `eval_deepjscc_cls.py` | in this trainer an MSE + MS-SSIM arm without the detector term is `--loss perceptual_yolo --yolo-feat-weight 0`; see script docstring |
 | Table 5 (lift across the threat suite) | `eval_compact_jamming_erasure.py` | docstring: compact codec across the jamming and erasure grid |
@@ -254,9 +270,12 @@ owner under its own licence.
   from the upstream authors. Check the upstream repository for its terms of use.
 - **YOLOv8 / Ultralytics** – AGPL-3.0. Installed as the `ultralytics` package; detector
   weights (`yolov8m.pt` and the other supervisors) are downloaded by that package and are
-  not redistributed. The ground-truth detection scripts expect a YOLOv8s detector fine-tuned
-  on VisDrone train at `weights/yolov8s-visdrone.pt` (`--yolo`);
-  `scripts/build_visdrone_yolo.py` converts the VisDrone annotations for training one.
+  not redistributed. The ground-truth detection scripts use the publicly released YOLOv8s
+  detector trained on VisDrone2019-DET train that the paper uses, `mshamrai/yolov8s-visdrone`
+  on Hugging Face (licence tag on its model card: OpenRAIL), placed at
+  `weights/yolov8s-visdrone.pt` (`--yolo`); it is not redistributed here.
+  `scripts/build_visdrone_yolo.py` converts the VisDrone annotations to the YOLO format for
+  anyone who trains a replacement; a replacement does not reproduce the paper's values.
 - **DINOv2** – Apache-2.0 (loaded from `facebookresearch/dinov2` or `facebook/dinov2-small`).
 - **SigLIP** – Apache-2.0 (`google/siglip-*`). The same loss module can also load
   **OWLv2** (Apache-2.0, `google/owlv2-*`), which the paper does not use.
@@ -287,7 +306,7 @@ Please cite the paper (the DOI is a placeholder until publication):
 ```bibtex
 @article{savorona2026goaljscc,
   author  = {Savorona, Nazarii and Tereshchenko, Yaroslav and Bobyl, Bohdan},
-  title   = {Goal-Oriented Joint Source-Channel Coding for {UAV} Reconnaissance Video under
+  title   = {Goal-Oriented Joint Source--Channel Coding for {UAV} Reconnaissance Video Under
              Contested {RF} Channels with Detector-Feature Distillation},
   journal = {Drones},
   year    = {2026},

@@ -22,6 +22,10 @@ from transformers import CLIPVisionModelWithProjection
 from semvideo.channel.awgn import AWGNChannel
 from semvideo.models.deep_jscc import DeepJSCC
 
+if len(sys.argv) < 5 or sys.argv[1] in ("-h", "--help"):
+    print(__doc__)
+    sys.exit(0 if sys.argv[1:2] in (["-h"], ["--help"]) else 2)
+
 ckpt, valdir, n, SNR = sys.argv[1], sys.argv[2], int(sys.argv[3]), float(sys.argv[4])
 sz = int(sys.argv[5]) if len(sys.argv) > 5 else 256
 net = DeepJSCC(channel_ratio=1 / 6, base_channels=64).cuda().eval()

@@ -1,0 +1,58 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper given under preferred-citation."
+type: software
+title: "goal-oriented-jscc-uav: code for goal-oriented joint source–channel coding of UAV reconnaissance video under contested RF channels"
+version: 0.1.0
+license: AGPL-3.0-only
+repository-code: "https://github.com/nazarsavorona/goal-oriented-jscc-uav"
+authors:
+  - given-names: Nazarii
+    family-names: Savorona
+    email: nazarii.savorona@knu.ua
+    orcid: "https://orcid.org/0009-0008-8027-8235"
+    affiliation: "Department of Mathematical Informatics, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+  - given-names: Yaroslav
+    family-names: Tereshchenko
+    orcid: "https://orcid.org/0000-0002-8451-7634"
+    affiliation: "Department of Theory and Technology of Programming, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+  - given-names: Bohdan
+    family-names: Bobyl
+    orcid: "https://orcid.org/0000-0002-9612-1071"
+    affiliation: "Department of Mathematical Informatics, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+keywords:
+  - joint source-channel coding
+  - semantic communication
+  - goal-oriented communication
+  - unmanned aerial vehicles
+  - jamming
+  - symbol erasure
+  - feature distillation
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24247227
+    description: "Archived training arguments, evaluation records and verification scripts (Zenodo, restricted access; available from the corresponding author on written request)"
+preferred-citation:
+  type: article
+  title: "Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF Channels with Detector-Feature Distillation"
+  authors:
+    - given-names: Nazarii
+      family-names: Savorona
+      orcid: "https://orcid.org/0009-0008-8027-8235"
+      affiliation: "Department of Mathematical Informatics, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+    - given-names: Yaroslav
+      family-names: Tereshchenko
+      orcid: "https://orcid.org/0000-0002-8451-7634"
+      affiliation: "Department of Theory and Technology of Programming, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+    - given-names: Bohdan
+      family-names: Bobyl
+      orcid: "https://orcid.org/0000-0002-9612-1071"
+      affiliation: "Department of Mathematical Informatics, Faculty of Computer Science and Cybernetics, Taras Shevchenko National University of Kyiv"
+  journal: Drones
+  publisher:
+    name: MDPI
+  year: 2026
+  # DOI of the article: left empty until MDPI assigns it at publication. Fill in, e.g.
+  # doi: 10.3390/dronesXXXXXXX
+  # volume: XX
+  # issue: XX
+  # start: XXX   # MDPI article number

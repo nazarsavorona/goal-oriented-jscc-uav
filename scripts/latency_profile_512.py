@@ -20,6 +20,10 @@ import sys
 import time
 from pathlib import Path
 
+if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help"):
+    print(__doc__)
+    sys.exit(0)
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 import cv2

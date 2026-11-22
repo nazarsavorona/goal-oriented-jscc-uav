@@ -1,7 +1,10 @@
 # Classical baselines – install + run
 
-Real H.264 / H.265 + LDPC pipeline behind the paper's classical-baseline rows.
-Replaces the prior threshold-LDPC approximation.
+Separated source-channel pipeline: an ffmpeg codec (H.264 / H.265) over a real LDPC code
+(pyldpc, belief-propagation decoding). The paper's separated JPEG + LDPC reference (Table 8)
+is produced by `scripts/eval_classical_jamming_clssim.py`, which reuses the LDPC code of
+`ldpc_real.py` at block length 1024; the H.264 / H.265 + LDPC sweep below is not reported in
+the paper.
 
 ## 1. Install
 
@@ -24,9 +27,7 @@ For H.265 you need a system ffmpeg with `libx265`:
 - **Linux**: `sudo apt-get install ffmpeg` (Ubuntu 22.04+ ships libx265).
 - **macOS**: `brew install ffmpeg`.
 
-Optional `bpgenc` for the BPG codec sweep is **not** wired here – BPG is a
-strong intra-only competitor for the bandwidth-vs-PSNR row of the paper, but
-it requires a separately built binary. Add it as `[bpg]` extra in a follow-up.
+BPG (`bpgenc`) is not wired here; it would need a separately built binary.
 
 ## 2. Smoke test
 
@@ -60,11 +61,11 @@ Approximate wall-clock budget on a single CPU core for 32 frames @ 256×256:
 - Sweep cells: 2 codecs × 6 SNRs × 2 CRFs × 3 channels ≈ 72 cells ≈ 10 minutes.
 
 Add `--perceptual` to also compute LPIPS + DINOv2 cls_sim (slower; needs the
-DINOv2 hub model downloaded). For the paper run this once at the standard CRFs.
+DINOv2 hub model downloaded).
 
 ## 4. Full-bitstream sweep
 
-For the SNR-quality figure use:
+For a sweep over the whole bitstream use:
 
 ```bash
 python scripts/run_classical_sweep.py \
@@ -77,17 +78,17 @@ python scripts/run_classical_sweep.py \
     --out experiments/baselines_real/snr_sweep.csv
 ```
 
-`--max-bits 0` means "push the whole MP4 bitstream through LDPC" – paper-grade
+`--max-bits 0` means "push the whole MP4 bitstream through LDPC" – full
 fidelity. This pass takes ~1 hour on a laptop CPU.
 
 ## 5. Known caveats
 
-1. **Block length**. We use n≈240-bit LDPC blocks. Production 5G NR-LDPC uses
-   k∈[40, 8448], n∈[80, 17856]. Short blocks have a softer waterfall – our
-   curves are conservative (slightly worse than NR-LDPC). For the paper this
-   *helps* the classical baseline since our JSCC is benchmarked against a
-   stronger code than it would face in reality – the gap we report is a
-   lower bound on the real-world gap.
+1. **Block length**. `bpsk_qpsk_ldpc` defaults to n≈240-bit LDPC blocks (the
+   paper's JPEG + LDPC reference uses n = 1024). Production 5G NR-LDPC uses
+   k∈[40, 8448], n∈[80, 17856]. Short blocks have a softer waterfall, so these
+   curves are slightly worse than NR-LDPC: the short code handicaps the
+   separated baseline, and a gap measured against it overstates the gap to a
+   production code.
 
 2. **BPSK only by default**. The script accepts `--modulation qpsk`. For
    higher-order QAM you'd need to extend `bpsk_qpsk_ldpc`; left as future work.
@@ -100,4 +101,4 @@ fidelity. This pass takes ~1 hour on a laptop CPU.
 
 4. **Speed knob**. `--max-bits N` truncates the LDPC pass at N bits so the
    sweep is interactive. Set 0 to run the full MP4 bitstream through LDPC for
-   paper-grade numbers.
+   full-bitstream numbers.

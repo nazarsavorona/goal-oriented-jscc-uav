@@ -78,7 +78,7 @@ class DINOv2FeatureLoss(nn.Module):
             self.layers: tuple[int, ...] | None = None
             self.layer_weights: tuple[float, ...] | None = None
         else:
-            self.layers = tuple(int(l) for l in layers)
+            self.layers = tuple(int(layer) for layer in layers)
             if layer_weights is None:
                 # Default: favour deep blocks slightly per ViTKD
                 base = (0.25, 0.25, 0.50)

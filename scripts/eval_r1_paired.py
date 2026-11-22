@@ -21,6 +21,10 @@ from semvideo.models.deep_jscc import DeepJSCC  # noqa: E402
 from semvideo.channel.awgn import AWGNChannel  # noqa: E402
 from transformers import AutoModel  # noqa: E402
 
+if len(sys.argv) < 4 or sys.argv[1] in ("-h", "--help"):
+    print(__doc__)
+    sys.exit(0 if sys.argv[1:2] in (["-h"], ["--help"]) else 2)
+
 detf_ckpt, pix_ckpt, valdir = sys.argv[1], sys.argv[2], sys.argv[3]
 n = int(sys.argv[4]) if len(sys.argv) > 4 else 375
 SNR = int(sys.argv[5]) if len(sys.argv) > 5 else 20

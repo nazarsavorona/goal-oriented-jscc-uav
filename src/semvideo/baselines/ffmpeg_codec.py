@@ -219,7 +219,8 @@ def decode_bitstream(bitstream: bytes) -> list[np.ndarray]:
     Returns:
         Decoded RGB frames (may be empty / truncated).
     """
-    tmp = Path(tempfile.NamedTemporaryFile(suffix=".mp4", delete=False).name)
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as fh:
+        tmp = Path(fh.name)
     try:
         tmp.write_bytes(bitstream)
         return _decode_mp4(tmp)

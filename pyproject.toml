@@ -23,7 +23,7 @@ dependencies = [
     "torch>=2.2",
     "torchvision>=0.17",
     "numpy>=1.26",
-    "opencv-python>=4.9",
+    "opencv-python-headless>=4.9",
     "wandb>=0.18,<0.19",  # 0.19+ has Windows service startup bug
     "einops>=0.7",
     "tqdm",
