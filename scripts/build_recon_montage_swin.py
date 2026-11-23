@@ -7,16 +7,17 @@ the deployed two-stage codec sits at cls-sim 0.99. So this script renders the sa
 channel conditions on the same display frames through the two-stage cross-corpus SwinJSCC
 codec at 512 px, and a local compositor merges the two into one figure.
 
-Runs in the SwinJSCC mount layout, because ``eval_swinjscc_dinov2`` chdir's into
-third_party/SwinJSCC at import::
+Needs the upstream SwinJSCC code (see the README, "Third-party code"): it is found at
+``$SWINJSCC_DIR``, by default ``<parent of this repository>/third_party/SwinJSCC``, which is
+``/third_party/SwinJSCC`` in the README's Docker layout. ``eval_swinjscc_dinov2`` changes the
+working directory into it at import, so every path passed here must be absolute::
 
-    docker run --rm --runtime=nvidia \
-      -v $HOME/semvideo:/repo/semvideo -v $HOME/semvideo/third_party:/repo/third_party \
-      -v $HOME/data:/data -w /repo/semvideo semvideo:latest \
-      python -u scripts/build_recon_montage_swin.py --ckpt /repo/semvideo/experiments/... \
-        --out-dir /repo/semvideo/experiments/recon_montage_2026_08_21/swin
-
-Every checkpoint path must be absolute for that reason.
+    docker run --rm --gpus all --ipc=host \
+      -v "$PWD":/workspace -v /path/to/third_party:/third_party:ro \
+      -v /path/to/data:/data:ro -w /workspace semvideo:latest \
+      python -u scripts/build_recon_montage_swin.py --ckpt /abs/path/to/best.pt \
+        --val-dir /data/dji/frames_512_v1/val \
+        --out-dir /workspace/experiments/recon_montage_swin
 
 Gate. Four of the five rows have a published cell for this checkpoint (cliff table and
 erasure table). All four must reproduce, or the script refuses to write panels: the whole

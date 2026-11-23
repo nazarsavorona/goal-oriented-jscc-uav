@@ -50,6 +50,10 @@ class ChannelWithReactiveJam(nn.Module):
             "above-average symbol energy".
         react_latency: Forwarded to ``ReactiveJammer``. Default 8 symbols.
         hold_duration: Forwarded to ``ReactiveJammer``. Default 64 symbols.
+        power_reference: Forwarded to ``ReactiveJammer``. Default
+            ``"followed"`` (emission-following). The reactive-augmented
+            checkpoint of the paper (Table 2, row 8) was trained with
+            ``"mean"``, the mean-referenced convention.
         always_apply: If True, jamming runs at eval too (for eval sweeps).
             Default False (training-only, like Dropout).
     """
@@ -64,6 +68,7 @@ class ChannelWithReactiveJam(nn.Module):
         react_latency: int = 8,
         hold_duration: int = 64,
         always_apply: bool = False,
+        power_reference: str = "followed",
     ) -> None:
         super().__init__()
         if not 0.0 <= jam_prob <= 1.0:
@@ -94,6 +99,7 @@ class ChannelWithReactiveJam(nn.Module):
             detect_threshold=detect_threshold,
             react_latency=react_latency,
             hold_duration=hold_duration,
+            power_reference=power_reference,
         )
 
     def _should_apply(self) -> bool:
@@ -128,5 +134,6 @@ class ChannelWithReactiveJam(nn.Module):
             f"jam_prob={self.jam_prob}, jnr=U[{self.jnr_min_db}, "
             f"{self.jnr_max_db}], detect={self.detect_threshold}, "
             f"latency={self.react_latency}, hold={self.hold_duration}, "
-            f"always_apply={self.always_apply}"
+            f"always_apply={self.always_apply}, "
+            f"power_reference={self.jammer.power_reference}"
         )

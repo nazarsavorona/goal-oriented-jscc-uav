@@ -295,6 +295,16 @@ def main() -> int:
                     help="Min JNR (dB) per jammed minibatch.")
     ap.add_argument("--train-reactive-jam-jnr-max", type=float, default=15.0,
                     help="Max JNR (dB) per jammed minibatch.")
+    ap.add_argument("--train-reactive-jam-power-reference", default="mean",
+                    choices=["mean", "followed"],
+                    help="Power convention of the training-time reactive jammer: "
+                         "'mean' (default) scales the interference on each gated symbol "
+                         "to the mean symbol energy of the block, the mean-referenced "
+                         "convention the reactive-augmented checkpoint of the paper "
+                         "(Table 2, row 8) was trained with; its stored arguments "
+                         "predate this flag, so the default is the convention they "
+                         "imply. 'followed' scales it to each gated symbol's own energy "
+                         "(the emission-following convention of the evaluations).")
     ap.add_argument("--seed", type=int, default=42,
                     help="RNG seed for torch, numpy, and dataloader workers. "
                          "Use the same seed to reproduce metrics within 0.01.")
@@ -378,13 +388,16 @@ def main() -> int:
                 jnr_min_db=args_ns.train_reactive_jam_jnr_min,
                 jnr_max_db=args_ns.train_reactive_jam_jnr_max,
                 always_apply=False,
+                power_reference=args_ns.train_reactive_jam_power_reference,
             ).to(device)
         else:
             net.channel.jam_prob = args_ns.train_reactive_jam_prob
+            net.channel.jammer.power_reference = args_ns.train_reactive_jam_power_reference
         print(f"[reactive-jam-aug] training-time reactive jamming on, "
               f"prob={args_ns.train_reactive_jam_prob}, "
               f"JNR ~ U[{args_ns.train_reactive_jam_jnr_min}, "
-              f"{args_ns.train_reactive_jam_jnr_max}] dB "
+              f"{args_ns.train_reactive_jam_jnr_max}] dB, "
+              f"power reference {args_ns.train_reactive_jam_power_reference} "
               f"(ChannelWithReactiveJam, eval-passthrough)")
 
     # AMP + compile setup. bf16 is preferred on RTX 4090/Ampere+ – no GradScaler

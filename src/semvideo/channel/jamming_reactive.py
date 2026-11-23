@@ -59,10 +59,21 @@ class ReactiveJammer(nn.Module):
             would inject over the whole block. Same threat shape, equal power
             budget: this isolates whether reactive gating hurts because of where
             the energy lands or only because there is more of it.
+
+            ``"mean"`` is the mean-referenced convention of the earlier version
+            of this jammer: the same automaton, but the interference on every
+            gated symbol has variance ``mean_energy * JNR``, where
+            ``mean_energy`` is the mean symbol energy of the whole input block,
+            so the highest-energy symbols are relatively under-jammed. The
+            reactive-augmented SwinJSCC-capacity checkpoint (Table 2, row 8)
+            was trained against this convention, and the paper names it
+            wherever a quoted value was measured in it (Section 4.4,
+            Appendix A). The noise draw is the one of that earlier version, so
+            a seeded run consumes the random stream in the same way.
     """
 
     #: Accepted values for ``power_reference``.
-    POWER_REFERENCES = ("followed", "matched_barrage")
+    POWER_REFERENCES = ("followed", "matched_barrage", "mean")
 
     def __init__(
         self,
@@ -137,9 +148,11 @@ class ReactiveJammer(nn.Module):
             x: Input symbols, any shape (the symbol axis is jammed; all other
                 axes are broadcast).
             snr_db: Background SNR in dB. Under ``power_reference="followed"``
-                this is ignored (the jammer's noise is calibrated by JNR against
-                the followed symbol, not the channel SNR) and the argument only
-                exists for API parity with ``JammingChannel.forward(x, snr_db)``.
+                and ``"mean"`` this does not change the output (the jammer's
+                noise is calibrated by JNR against the followed symbol or the
+                block's mean energy, not the channel SNR); it only feeds the
+                power accounting in ``last_power_ratio`` and exists for API
+                parity with ``JammingChannel.forward(x, snr_db)``.
                 Under ``power_reference="matched_barrage"`` it sets the barrage
                 power budget being matched and is therefore required.
 
@@ -169,7 +182,13 @@ class ReactiveJammer(nn.Module):
         # so high-energy symbols were relatively under-jammed -- an anti-DRFM bug;
         # a follower jammer's defining property is power that tracks the emission.)
         jnr_linear = 10.0 ** (self.jnr_db / 10.0)
-        per_symbol_var = (energy * jnr_linear).clamp(min=1e-12)  # (B', N)
+        if self.power_reference == "mean":
+            # Mean-referenced convention: one interference variance for every
+            # gated symbol, the block's mean symbol energy times the JNR.
+            mean_var = mean_e * jnr_linear
+            per_symbol_var = torch.full_like(energy, mean_var)  # (B', N), accounting only
+        else:
+            per_symbol_var = (energy * jnr_linear).clamp(min=1e-12)  # (B', N)
 
         # Power accounting against the equal-JNR barrage budget. A barrage jammer
         # injects noise_var * jnr_linear into EVERY symbol, where noise_var is the
@@ -192,7 +211,11 @@ class ReactiveJammer(nn.Module):
             jammed_energy / barrage_energy if barrage_energy not in (None, 0.0) else None
         )
 
-        noise = torch.randn_like(flat) * per_symbol_var.sqrt()
+        if self.power_reference == "mean":
+            # Exactly the draw of the earlier version (scalar standard deviation).
+            noise = torch.randn_like(flat) * (mean_var**0.5)
+        else:
+            noise = torch.randn_like(flat) * per_symbol_var.sqrt()
         flat_jam = torch.where(mask, flat + noise, flat)
 
         return flat_jam.reshape(orig_shape).movedim(-1, self.symbol_axis)

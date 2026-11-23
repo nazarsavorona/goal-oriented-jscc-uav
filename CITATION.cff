@@ -39,7 +39,7 @@ references:
     publisher:
       name: Zenodo
     year: 2026
-    notes: "Stored training arguments, evaluation records and the verification scripts that recompute the paper's tables. Restricted access: the files are not public, and access is granted by the corresponding author on written request. This record is related data, not an archive of this software release."
+    notes: "Evaluation records, the verification scripts that recompute the paper's tables from them, the stored training arguments, ten trained checkpoints of the SwinJSCC-capacity codec and the per-image detector outputs of the VisDrone2019-DET test-dev runs. Restricted access: the files are not public, and access is granted by the corresponding author on written request. This record is related data, not an archive of this software release."
 preferred-citation:
   type: article
   title: "Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF Channels with Detector-Feature Distillation"

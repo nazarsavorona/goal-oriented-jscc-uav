@@ -72,3 +72,90 @@ def test_rejects_invalid_params():
         ReactiveJammer(react_latency=-1)
     with pytest.raises(ValueError):
         ReactiveJammer(hold_duration=0)
+
+
+# ---------------------------------------------------------------------------
+# Power conventions: the mean-referenced variant that trained the reactive-augmented model
+# ---------------------------------------------------------------------------
+
+
+def _ramp_input() -> torch.Tensor:
+    """Symbols with very different energies, so the two conventions must differ."""
+    torch.manual_seed(1)
+    scale = torch.linspace(0.2, 3.0, 2048)
+    return torch.randn(4, 2048) * scale
+
+
+def test_rejects_unknown_power_reference():
+    with pytest.raises(ValueError):
+        ReactiveJammer(power_reference="peak")
+
+
+def test_mean_reference_matches_earlier_formula_bit_for_bit():
+    """'mean' reproduces the earlier jammer: noise std sqrt(mean energy * JNR), same draw."""
+    x = _ramp_input()
+    jnr_db = 10.0
+    j = ReactiveJammer(jnr_db=jnr_db, detect_threshold=0.5, react_latency=8,
+                       hold_duration=64, power_reference="mean")
+    torch.manual_seed(123)
+    y = j(x)
+
+    # Reference: the earlier implementation, written out.
+    energy = x.detach().abs() ** 2
+    mean_e = float(energy.mean().clamp(min=1e-12).item())
+    mask = j._build_jam_mask(energy, mean_e)
+    noise_var = mean_e * 10.0 ** (jnr_db / 10.0)
+    torch.manual_seed(123)
+    noise = torch.randn_like(x) * (noise_var**0.5)
+    y_ref = torch.where(mask, x + noise, x)
+    assert torch.equal(y, y_ref)
+
+
+def test_mean_reference_interference_does_not_follow_symbol_energy():
+    """Under 'mean' every gated symbol gets the same variance; under 'followed' it scales."""
+    x = _ramp_input()
+    energy = x.abs() ** 2
+    mean_e = float(energy.mean().item())
+    jnr_lin = 10.0 ** (10.0 / 10.0)
+    for ref in ("mean", "followed"):
+        j = ReactiveJammer(jnr_db=10.0, detect_threshold=0.5, react_latency=0,
+                           hold_duration=4096, power_reference=ref)
+        torch.manual_seed(7)
+        d = j(x) - x
+        mask = d != 0
+        assert mask.float().mean().item() > 0.5  # latched on for most of the block
+        lo = mask & (energy < 0.5 * mean_e)
+        hi = mask & (energy > 2.0 * mean_e)
+        var_lo = float((d[lo] ** 2).mean())
+        var_hi = float((d[hi] ** 2).mean())
+        if ref == "mean":
+            # same expected variance mean_e * JNR in both energy groups
+            assert var_lo == pytest.approx(mean_e * jnr_lin, rel=0.15)
+            assert var_hi == pytest.approx(mean_e * jnr_lin, rel=0.15)
+        else:
+            assert var_hi > 4.0 * var_lo
+
+
+def test_mean_reference_leaves_ungated_symbols_and_reports_power():
+    x = _ramp_input()
+    j = ReactiveJammer(jnr_db=10.0, detect_threshold=1.0, react_latency=8,
+                       hold_duration=64, power_reference="mean")
+    y = j(x, snr_db=10.0)
+    energy = x.abs() ** 2
+    mask = j._build_jam_mask(energy, float(energy.mean().item()))
+    assert torch.equal(y[~mask], x[~mask])
+    # injected energy / equal-JNR barrage budget = duty * SNR_linear under this convention
+    assert j.last_power_ratio == pytest.approx(j.last_duty * 10.0, rel=1e-5)
+
+
+def test_wrapper_forwards_power_reference():
+    from semvideo.channel.reactive_jam_wrapped import ChannelWithReactiveJam
+
+    class _Identity(torch.nn.Module):
+        def forward(self, feature, chan_param, avg_pwr=False):  # noqa: D102
+            return feature
+
+    w = ChannelWithReactiveJam(_Identity(), jam_prob=1.0, power_reference="mean")
+    assert w.jammer.power_reference == "mean"
+    assert "power_reference=mean" in w.extra_repr()
+    assert ChannelWithReactiveJam(_Identity()).jammer.power_reference == "followed"

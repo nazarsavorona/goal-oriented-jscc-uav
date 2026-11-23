@@ -32,8 +32,6 @@ from types import SimpleNamespace
 import cv2
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torchvision.transforms as T
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SEMVIDEO_ROOT = Path(__file__).resolve().parents[1]
@@ -43,13 +41,23 @@ EXPERIMENTS_DIR = SEMVIDEO_ROOT / "experiments"
 # (/third_party/SwinJSCC when the repository is mounted at /workspace in the Docker image).
 SWINJSCC_DIR = Path(os.environ.get("SWINJSCC_DIR", REPO_ROOT / "third_party" / "SwinJSCC"))
 sys.path.insert(0, str(SEMVIDEO_ROOT / "scripts"))  # to import sibling eval_swinjscc_dinov2
+sys.path.insert(0, str(SEMVIDEO_ROOT / "src"))
 sys.path.insert(0, str(SWINJSCC_DIR))
 os.chdir(str(SWINJSCC_DIR))
 
 from net.network import SwinJSCC  # noqa: E402, F401
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DINO_RES = 518
+
+# The metric path (DINOv2 class-token cosine, PSNR) lives in semvideo.metrics.dinov2_clssim so
+# that scripts which need only the metric can use it without this module's SwinJSCC import.
+# It is re-exported here, so ``from eval_benchmark_sweep import DINOv2Extractor`` still works.
+from semvideo.metrics.dinov2_clssim import (  # noqa: E402, F401
+    DINO_RES,
+    DINOv2Extractor,
+    cossim,
+    psnr,
+)
 
 
 # Reuse the canonical loader / forward path from eval_swinjscc_dinov2.py
@@ -130,39 +138,6 @@ def reconstruct(net, img_bgr, snr_db, codec_size):
     return crop_resized, rec_bgr
 
 
-def psnr(a, b):
-    mse = np.mean((a.astype(np.float32) - b.astype(np.float32)) ** 2)
-    if mse == 0:
-        return float("inf")
-    return 20 * np.log10(255.0 / np.sqrt(mse))
-
-
-class DINOv2Extractor:
-    """Default backbone: DINOv2 ViT-S/14. Swap via ``backbone`` argument:
-    ``dinov2_vits14`` (default, 21 M params, 384 feat dim, 518×518 input),
-    ``dinov2_vitb14`` (86 M, 768 dim), ``dinov2_vitl14`` (300 M, 1024 dim).
-    """
-
-    def __init__(self, backbone: str = "dinov2_vits14"):
-        self.backbone = backbone
-        self.model = torch.hub.load(
-            "facebookresearch/dinov2", backbone, verbose=False,
-        ).to(DEVICE).eval()
-        self.tx = T.Compose([
-            T.ToPILImage(),
-            T.Resize((DINO_RES, DINO_RES)),
-            T.ToTensor(),
-            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
-
-    @torch.no_grad()
-    def features(self, frame_bgr):
-        rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-        x = self.tx(rgb).unsqueeze(0).to(DEVICE)
-        out = self.model.forward_features(x)
-        return out["x_norm_clstoken"].squeeze(0), out["x_norm_patchtokens"].squeeze(0)
-
-
 class CLIPExtractor:
     """OpenAI CLIP ViT-B/32 features. Different family from DINOv2 – addresses
     the "what if DINOv2 cherry-picks" objection. Output is the
@@ -184,12 +159,6 @@ class CLIPExtractor:
         # patch tokens (skip the CLS at index 0)
         patches = out.last_hidden_state[0, 1:, :]
         return cls, patches
-
-
-def cossim(a, b):
-    if a.dim() == 1:
-        return float(F.cosine_similarity(a.unsqueeze(0), b.unsqueeze(0)).item())
-    return float(F.cosine_similarity(a, b, dim=-1).mean().item())
 
 
 def list_images(root: Path, max_n: int | None) -> list[Path]:

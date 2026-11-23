@@ -9,14 +9,17 @@ Where a series is read from an evaluation record, the record is opened at import
 and the plotted values are computed from it; nothing is interpolated or re-derived by
 hand. The records are the per-run summaries written by ``eval_erasure_cross_corpus.py``
 and ``eval_visdrone_gt_detection.py`` and the paired test-dev summary. They are not part
-of this repository: they belong to the archived evaluation records (see the README), and
-this script expects them under ``records/`` in the repository root, or under the
-directory named by the ``SEMVIDEO_RECORDS_DIR`` environment variable::
+of this repository: they belong to the archived evaluation records on Zenodo (see the
+README). In that record's records archive the three directories sit together in
+``records/docs/research/reviews_2026_09/``; unpacked at the repository root, that is where
+this script finds them. Otherwise it reads them from ``records/`` directly, or from the
+directory named by the ``SEMVIDEO_RECORDS_DIR`` environment variable, which is the
+directory that contains them::
 
-    records/erasure_figure_source/dji_twostage_summary.csv
-    records/erasure_figure_source/dji_erasureaug_p40_summary.csv
-    records/gt_detection/{run_full,run_erasure0}/metrics.json
-    records/heldout_testdev/testdev_summary.json
+    <records dir>/erasure_figure_source/dji_twostage_summary.csv
+    <records dir>/erasure_figure_source/dji_erasureaug_p40_summary.csv
+    <records dir>/gt_detection/{run_full,run_erasure0}/metrics.json
+    <records dir>/heldout_testdev/testdev_summary.json
 
 The remaining series are constants carried from the measurements named in the comment
 above each of them.
@@ -45,8 +48,20 @@ import numpy as np  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT_DIR = REPO_ROOT / "figures"
-# Evaluation records the figures are read from (see the module docstring).
-RECORDS_DIR = Path(os.environ.get("SEMVIDEO_RECORDS_DIR", REPO_ROOT / "records"))
+# Evaluation records the figures are read from (see the module docstring): the directory
+# that contains erasure_figure_source/, gt_detection/ and heldout_testdev/.
+_ARCHIVE_LAYOUT = REPO_ROOT / "records" / "docs" / "research" / "reviews_2026_09"
+
+
+def _default_records_dir() -> Path:
+    """``records/`` if it holds the directories, else their place in the Zenodo archive."""
+    flat = REPO_ROOT / "records"
+    if not (flat / "erasure_figure_source").is_dir() and _ARCHIVE_LAYOUT.is_dir():
+        return _ARCHIVE_LAYOUT
+    return flat
+
+
+RECORDS_DIR = Path(os.environ.get("SEMVIDEO_RECORDS_DIR", _default_records_dir()))
 
 # One style for every figure of the paper.
 RC = {

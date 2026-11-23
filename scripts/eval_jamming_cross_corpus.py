@@ -525,11 +525,12 @@ def main():
     ap.add_argument("--snr", type=int, default=20)
     ap.add_argument(
         "--reactive-power-reference", type=str, default="followed",
-        choices=["followed", "matched_barrage"],
+        choices=["followed", "matched_barrage", "mean"],
         help="Power convention for the reactive jammer. 'followed' scales interference to "
              "the followed symbol's energy (on-target JSR = JNR, more total energy than "
              "barrage); 'matched_barrage' keeps the gating but equalises the injected "
-             "budget against an equal-JNR barrage.",
+             "budget against an equal-JNR barrage; 'mean' scales it to the mean symbol "
+             "energy of the block (the mean-referenced convention of Section 4.4).",
     )
     ap.add_argument("--reactive-detect-threshold", type=float, default=0.5,
                     help="Reactive automaton gating threshold, in units of mean symbol "

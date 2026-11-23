@@ -16,7 +16,8 @@ It writes NO new codec and NO new LDPC. Everything is reused:
         <- src/semvideo/channel/jamming.py           (barrage / pulsed / swept / single_tone)
         <- src/semvideo/channel/jamming_reactive.py  (reactive DRFM proxy)
   * the DINOv2 ViT-S/14 cls-token cosine + PSNR of the jamming table
-        <- scripts/eval_benchmark_sweep.py           (DINOv2Extractor, cossim, psnr)
+        <- src/semvideo/metrics/dinov2_clssim.py     (DINOv2Extractor, cossim, psnr; the
+           definitions scripts/eval_benchmark_sweep.py uses and re-exports)
   * the analytic BER-threshold LDPC model
         <- scripts/baseline_under_jamming.py         (average_ber_under_jamming)
 
@@ -81,7 +82,9 @@ from run_classical_clssim_sweep import (  # noqa: E402
 )
 
 # --- reused: the exact metric path of the paper's jamming table ---
-from eval_benchmark_sweep import DINOv2Extractor, cossim, psnr  # noqa: E402
+# Imported from the shared module, not from eval_benchmark_sweep: that module loads the upstream
+# SwinJSCC code and changes the working directory at import, which this baseline needs neither of.
+from semvideo.metrics.dinov2_clssim import DINOv2Extractor, cossim, psnr  # noqa: E402
 
 # --- reused: real LDPC stack ---
 from semvideo.baselines.ldpc_real import _get_ldpc, bits_to_bytes, bytes_to_bits  # noqa: E402
