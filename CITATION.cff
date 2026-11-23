@@ -27,10 +27,19 @@ keywords:
   - jamming
   - symbol erasure
   - feature distillation
-identifiers:
-  - type: doi
-    value: 10.5281/zenodo.24247227
-    description: "Archived training arguments, evaluation records and verification scripts (Zenodo, restricted access; available from the corresponding author on written request)"
+references:
+  - type: data
+    title: "Evaluation records, verification scripts, trained checkpoints and detector outputs for \"Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF Channels with Detector-Feature Distillation\""
+    authors:
+      - given-names: Nazarii
+        family-names: Savorona
+        orcid: "https://orcid.org/0009-0008-8027-8235"
+    doi: 10.5281/zenodo.24247227
+    url: "https://doi.org/10.5281/zenodo.24247227"
+    publisher:
+      name: Zenodo
+    year: 2026
+    notes: "Stored training arguments, evaluation records and the verification scripts that recompute the paper's tables. Restricted access: the files are not public, and access is granted by the corresponding author on written request. This record is related data, not an archive of this software release."
 preferred-citation:
   type: article
   title: "Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF Channels with Detector-Feature Distillation"

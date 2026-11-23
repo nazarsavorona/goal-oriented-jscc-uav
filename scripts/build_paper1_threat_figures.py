@@ -9,7 +9,7 @@ Where a series is read from an evaluation record, the record is opened at import
 and the plotted values are computed from it; nothing is interpolated or re-derived by
 hand. The records are the per-run summaries written by ``eval_erasure_cross_corpus.py``
 and ``eval_visdrone_gt_detection.py`` and the paired test-dev summary. They are not part
-of this repository: they belong to the archived review record (see the README), and
+of this repository: they belong to the archived evaluation records (see the README), and
 this script expects them under ``records/`` in the repository root, or under the
 directory named by the ``SEMVIDEO_RECORDS_DIR`` environment variable::
 

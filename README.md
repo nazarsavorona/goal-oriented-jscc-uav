@@ -99,7 +99,7 @@ variables override the remaining fixed locations:
 All commands run from the repository root. The values below illustrate the interface. The
 arguments of every training run reported in the paper are stored with its checkpoint
 (`config.json`, or the argument dictionary inside the checkpoint) and are part of the
-archived review record.
+archived evaluation records (Zenodo).
 
 ```bash
 # unit tests (inside the Docker image run `pip install pytest` first if it is missing)
@@ -238,8 +238,8 @@ and should be read from there.
 
 `build_paper1_threat_figures.py` opens three sets of evaluation records at import time
 (`erasure_figure_source/`, `gt_detection/`, `heldout_testdev/`). They are part of the
-archived review record, not of this repository; place them under `records/` or point
-`SEMVIDEO_RECORDS_DIR` at them.
+archived evaluation records on Zenodo, not of this repository; place them under `records/`
+or point `SEMVIDEO_RECORDS_DIR` at them.
 
 ## Data
 
@@ -285,12 +285,12 @@ owner under its own licence.
   (`src/semvideo/baselines/INSTALL.md`).
 - **Sionna** – Apache-2.0; used only by `rf_stage2_sionna_link.py`, in its own container.
 
-## Archived review record
+## Archived evaluation records
 
 The stored training arguments, the evaluation records and the verification scripts that
-recompute the paper's tables are archived at Zenodo, DOI
+recompute the paper's tables are deposited in a Zenodo record, DOI
 [10.5281/zenodo.24247227](https://doi.org/10.5281/zenodo.24247227). Access to that record is
-restricted; it is available on request to the corresponding author.
+restricted; it is granted by the corresponding author on written request.
 
 ## Licence
 
