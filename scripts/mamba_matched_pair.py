@@ -251,45 +251,79 @@ def main() -> int:
     ap.add_argument("--loss", choices=["PSNR", "DETFEAT"], required=True)
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--out-tag", required=True)
-    ap.add_argument("--seed", type=int, default=1024,
-                    help="Seed passed to MambaJSCC's seed_torch(); 1024 is its default and "
-                         "the first seed of the paper (then 7 and 1337).")
-    ap.add_argument("--model-config", default=str(
-        MAMBAJSCC_DIR / "configs" / "vssm" / "vssm_tiny_DIV2K.yaml"),
-        help="MambaJSCC model configuration (default: upstream vssm_tiny, which both DJI "
-             "trunks use).")
-    ap.add_argument("--train-config", default=str(
-        SEMVIDEO_ROOT / "configs" / "mambajscc" / "vssm_tiny_DJI.yaml"),
+    ap.add_argument(
+        "--seed",
+        type=int,
+        default=1024,
+        help="Seed passed to MambaJSCC's seed_torch(); 1024 is its default and "
+        "the first seed of the paper (then 7 and 1337).",
+    )
+    ap.add_argument(
+        "--model-config",
+        default=str(MAMBAJSCC_DIR / "configs" / "vssm" / "vssm_tiny_DIV2K.yaml"),
+        help="MambaJSCC model configuration (default: upstream vssm_tiny_DIV2K.yaml; the "
+        "original runs read a DJI copy of it with the same architecture, which the "
+        "strict state load of the trunk checkpoint confirms).",
+    )
+    ap.add_argument(
+        "--train-config",
+        default=str(SEMVIDEO_ROOT / "configs" / "mambajscc" / "vssm_tiny_DJI.yaml"),
         help="MambaJSCC training configuration; sets the input size, the training data and "
-             "the directories where MambaJSCC saved the PSNR-trained trunk "
-             "(configs/mambajscc/vssm_tiny_DJI512.yaml for 512 px).")
-    ap.add_argument("--train-dir", default="",
-                    help="Override DATA.train_data_dir of the training configuration "
-                         "(an ImageFolder root: one subdirectory holding the DJI train frames).")
-    ap.add_argument("--init-encoder", default="",
-                    help="Encoder of the PSNR-trained trunk (default: last *.pt in the "
-                         "configuration's TRAIN.ENCODER_PATH).")
-    ap.add_argument("--init-decoder", default="",
-                    help="Decoder of the PSNR-trained trunk (default: last *.pt in the "
-                         "configuration's TRAIN.DECODER_PATH).")
+        "the directories where MambaJSCC saved the PSNR-trained trunk "
+        "(configs/mambajscc/vssm_tiny_DJI512.yaml for 512 px).",
+    )
+    ap.add_argument(
+        "--train-dir",
+        default="",
+        help="Override DATA.train_data_dir of the training configuration "
+        "(an ImageFolder root: one subdirectory holding the DJI train frames).",
+    )
+    ap.add_argument(
+        "--init-encoder",
+        default="",
+        help="Encoder of the PSNR-trained trunk (default: last *.pt in the "
+        "configuration's TRAIN.ENCODER_PATH).",
+    )
+    ap.add_argument(
+        "--init-decoder",
+        default="",
+        help="Decoder of the PSNR-trained trunk (default: last *.pt in the "
+        "configuration's TRAIN.DECODER_PATH).",
+    )
     ap.add_argument("--yolo-weights", default=str(SEMVIDEO_ROOT / "yolov8m.pt"))
-    ap.add_argument("--feat-weight", type=float, default=0.5,
-                    help="lambda on the detector-feature term; 0.5 is the published value")
-    ap.add_argument("--val-glob", default=str(
-        REPO_ROOT / "data" / "dji" / "frames_512_v1" / "val" / "*"))
+    ap.add_argument(
+        "--feat-weight",
+        type=float,
+        default=0.5,
+        help="lambda on the detector-feature term; 0.5 is the published value",
+    )
+    ap.add_argument(
+        "--val-glob", default=str(REPO_ROOT / "data" / "dji" / "frames_512_v1" / "val" / "*")
+    )
     ap.add_argument("--eval-snrs", default="20,10,5")
     ap.add_argument("--eval-n", type=int, default=375)
-    ap.add_argument("--skip-init-gate", action="store_true",
-                    help="do not stop when the initialization differs from the paper's 256 px "
-                         "trunk (needed to evaluate any other trunk with --epochs 0)")
+    ap.add_argument(
+        "--skip-init-gate",
+        action="store_true",
+        help="do not stop when the initialization differs from the paper's 256 px "
+        "trunk (needed to evaluate any other trunk with --epochs 0)",
+    )
     ap.add_argument("--out-root", default=str(EXPERIMENTS_DIR / "mamba_matched_pair"))
     args = ap.parse_args()
 
-    for name in ("model_config", "train_config", "train_dir", "init_encoder", "init_decoder",
-                 "yolo_weights", "out_root"):
+    for name in (
+        "model_config",
+        "train_config",
+        "train_dir",
+        "init_encoder",
+        "init_decoder",
+        "yolo_weights",
+        "out_root",
+    ):
         setattr(args, name, _abs(getattr(args, name)))
-    args.val_glob = str(Path(args.val_glob).expanduser().parent.resolve()
-                        / Path(args.val_glob).name)
+    args.val_glob = str(
+        Path(args.val_glob).expanduser().parent.resolve() / Path(args.val_glob).name
+    )
 
     # Pick the GPU before CUDA is first touched (MambaJSCC's own main.py does this with a GPU
     # picker at import time; MAMBA_GPU selects the device here).
@@ -297,8 +331,10 @@ def main() -> int:
     if not torch.cuda.is_available():
         raise SystemExit("MambaJSCC's selective-scan kernels need a CUDA GPU")
     if not MAMBAJSCC_DIR.is_dir():
-        raise SystemExit(f"upstream MambaJSCC code not found at {MAMBAJSCC_DIR} "
-                         "(set MAMBAJSCC_DIR; see the README)")
+        raise SystemExit(
+            f"upstream MambaJSCC code not found at {MAMBAJSCC_DIR} "
+            "(set MAMBAJSCC_DIR; see the README)"
+        )
 
     # MambaJSCC is imported from its own directory, as its run scripts expect.
     sys.path.insert(0, str(MAMBAJSCC_DIR))
@@ -324,10 +360,12 @@ def main() -> int:
     out_dir = Path(args.out_root) / args.out_tag
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    enc_init = args.init_encoder or sorted(
-        glob.glob(os.path.join(config.TRAIN.ENCODER_PATH, "*.pt")))[-1]
-    dec_init = args.init_decoder or sorted(
-        glob.glob(os.path.join(config.TRAIN.DECODER_PATH, "*.pt")))[-1]
+    enc_init = (
+        args.init_encoder or sorted(glob.glob(os.path.join(config.TRAIN.ENCODER_PATH, "*.pt")))[-1]
+    )
+    dec_init = (
+        args.init_decoder or sorted(glob.glob(os.path.join(config.TRAIN.DECODER_PATH, "*.pt")))[-1]
+    )
 
     seed_torch(args.seed)
     encoder = Mamba_encoder(config).cuda()
@@ -342,32 +380,57 @@ def main() -> int:
 
     # ---- gate: the initialization must be the checkpoint the paper describes
     print(f"\n[gate] evaluating the initialization ({img_size}px, n={args.eval_n})", flush=True)
-    init_metrics = evaluate(encoder, decoder, channel, config, metric, args.val_glob,
-                            [20.0], img_size, args.eval_n, device)["20.0"]
-    for name, got, (want, tol) in (("PSNR", init_metrics["psnr"], GATE_PSNR),
-                                   ("cls-sim", init_metrics["cls_sim"], GATE_CLSSIM)):
+    init_metrics = evaluate(
+        encoder,
+        decoder,
+        channel,
+        config,
+        metric,
+        args.val_glob,
+        [20.0],
+        img_size,
+        args.eval_n,
+        device,
+    )["20.0"]
+    for name, got, (want, tol) in (
+        ("PSNR", init_metrics["psnr"], GATE_PSNR),
+        ("cls-sim", init_metrics["cls_sim"], GATE_CLSSIM),
+    ):
         ok = abs(got - want) <= tol
-        print(f"[gate] {name}: got {got:.4f}, paper {want} +-{tol} -> "
-              f"{'OK' if ok else 'MISMATCH'}", flush=True)
+        print(
+            f"[gate] {name}: got {got:.4f}, paper {want} +-{tol} -> {'OK' if ok else 'MISMATCH'}",
+            flush=True,
+        )
         if not ok and not args.skip_init_gate:
-            raise SystemExit("GATE FAILED: the loaded checkpoint is not the one the paper "
-                             "describes -- refusing to train an arm off it")
+            raise SystemExit(
+                "GATE FAILED: the loaded checkpoint is not the one the paper "
+                "describes -- refusing to train an arm off it"
+            )
     print("[gate] PASS", flush=True)
 
     # ---- training, mirroring MambaJSCC's run/train.py
     train_loader, _ = get_loader(config)
-    criterion = MatchedCriterion(args.loss, device, args.yolo_weights, ms_ssim_cls=MS_SSIM,
-                                 feat_weight=args.feat_weight)
+    criterion = MatchedCriterion(
+        args.loss, device, args.yolo_weights, ms_ssim_cls=MS_SSIM, feat_weight=args.feat_weight
+    )
     opt_e = optim.AdamW(encoder.parameters(), lr=config.TRAIN.BASE_LR, weight_decay=1e-4)
     opt_d = optim.AdamW(decoder.parameters(), lr=config.TRAIN.BASE_LR, weight_decay=1e-4)
     sch_e = GradualWarmupScheduler(
-        optimizer=opt_e, multiplier=2.0, warm_epoch=0.1,
-        after_scheduler=optim.lr_scheduler.CosineAnnealingLR(opt_e, T_max=args.epochs,
-                                                             eta_min=0, last_epoch=-1))
+        optimizer=opt_e,
+        multiplier=2.0,
+        warm_epoch=0.1,
+        after_scheduler=optim.lr_scheduler.CosineAnnealingLR(
+            opt_e, T_max=args.epochs, eta_min=0, last_epoch=-1
+        ),
+    )
     sch_d = GradualWarmupScheduler(
-        optimizer=opt_d, multiplier=2.0, warm_epoch=0.1,
-        after_scheduler=optim.lr_scheduler.CosineAnnealingLR(opt_d, T_max=args.epochs,
-                                                             eta_min=0, last_epoch=-1))
+        optimizer=opt_d,
+        multiplier=2.0,
+        warm_epoch=0.1,
+        after_scheduler=optim.lr_scheduler.CosineAnnealingLR(
+            opt_d, T_max=args.epochs, eta_min=0, last_epoch=-1
+        ),
+    )
 
     encoder.train()
     decoder.train()
@@ -394,22 +457,46 @@ def main() -> int:
         sch_d.step()
         mean_loss = run_loss / max(steps, 1)
         history.append({"epoch": e, "loss": mean_loss})
-        print(f"[{args.loss}] epoch {e + 1}/{args.epochs}  loss {mean_loss:.2f}  "
-              f"lr {opt_e.param_groups[0]['lr']:.2e}", flush=True)
+        print(
+            f"[{args.loss}] epoch {e + 1}/{args.epochs}  loss {mean_loss:.2f}  "
+            f"lr {opt_e.param_groups[0]['lr']:.2e}",
+            flush=True,
+        )
 
     torch.save(encoder, out_dir / "encoder.pt")
     torch.save(decoder, out_dir / "decoder.pt")
 
     print(f"\n[final] {args.loss} arm, {args.epochs} epochs", flush=True)
-    final = evaluate(encoder, decoder, channel, config, metric, args.val_glob,
-                     eval_snrs, img_size, args.eval_n, device)
-    (out_dir / "metrics.json").write_text(json.dumps({
-        "arm": args.loss, "feat_weight": args.feat_weight, "epochs": args.epochs,
-        "img_size": img_size, "seed": args.seed,
-        "init_encoder": enc_init, "init_decoder": dec_init,
-        "init_gate": {k: v for k, v in init_metrics.items() if k != "per_frame_cls_sim"},
-        "history": history, "final": final,
-    }, indent=2), encoding="utf-8")
+    final = evaluate(
+        encoder,
+        decoder,
+        channel,
+        config,
+        metric,
+        args.val_glob,
+        eval_snrs,
+        img_size,
+        args.eval_n,
+        device,
+    )
+    (out_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "arm": args.loss,
+                "feat_weight": args.feat_weight,
+                "epochs": args.epochs,
+                "img_size": img_size,
+                "seed": args.seed,
+                "init_encoder": enc_init,
+                "init_decoder": dec_init,
+                "init_gate": {k: v for k, v in init_metrics.items() if k != "per_frame_cls_sim"},
+                "history": history,
+                "final": final,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     print(f"[done] wrote {out_dir}/metrics.json", flush=True)
     print("MAMBA_ARM_DONE", flush=True)
     return 0

@@ -7,7 +7,8 @@
 # the settings recorded in the names of the paper's trunk checkpoints). The PSNR-only trunk is
 # trained with upstream main.py; scripts/mamba_matched_pair.py reads the same pair, and refuses
 # a checkpoint whose state does not match the model.
-# The values are those of the authors' configuration file; only the paths are written for this
+# The values are those of our DJI training configuration (in the format of upstream
+# configs/vssm/vssm_tiny_DIV2K.yaml); only the paths are written for this
 # repository's layout: the checkpoint directories are relative to the upstream checkout, and
 # the data directories are ImageFolder roots (each holds one subdirectory with the DJI frames
 # of that split, frames_512_v1/train and frames_512_v1/val).

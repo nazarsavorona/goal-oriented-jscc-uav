@@ -175,12 +175,13 @@ class ReactiveJammer(nn.Module):
 
         mask = self._build_jam_mask(energy, mean_e)  # (B', N) bool
 
-        # True DRFM follower: concentrate interference power PROPORTIONAL to the
-        # followed (per-symbol) emission energy, so the realized on-target JSR
-        # equals jnr_db on every jammed symbol. (Previously the noise was scaled
-        # to the GLOBAL mean energy while the mask selected above-mean symbols,
-        # so high-energy symbols were relatively under-jammed -- an anti-DRFM bug;
-        # a follower jammer's defining property is power that tracks the emission.)
+        # Two power conventions (see the class docstring and the README section
+        # "Reactive-jammer conventions"). "followed" (default): interference power
+        # is proportional to the followed per-symbol emission energy, so the
+        # realized on-target JSR equals jnr_db on every jammed symbol, as for a
+        # follower jammer. "mean": one variance for every gated symbol, referenced
+        # to the block's mean symbol energy; the reactive-augmented model of
+        # Table 2 (row 8) was trained under this convention.
         jnr_linear = 10.0 ** (self.jnr_db / 10.0)
         if self.power_reference == "mean":
             # Mean-referenced convention: one interference variance for every
