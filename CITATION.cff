@@ -34,6 +34,12 @@ references:
       - given-names: Nazarii
         family-names: Savorona
         orcid: "https://orcid.org/0009-0008-8027-8235"
+      - given-names: Yaroslav
+        family-names: Tereshchenko
+        orcid: "https://orcid.org/0000-0002-8451-7634"
+      - given-names: Bohdan
+        family-names: Bobyl
+        orcid: "https://orcid.org/0000-0002-9612-1071"
     doi: 10.5281/zenodo.24247227
     url: "https://doi.org/10.5281/zenodo.24247227"
     publisher:
