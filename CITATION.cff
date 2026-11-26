@@ -66,8 +66,9 @@ preferred-citation:
   publisher:
     name: MDPI
   year: 2026
-  # DOI of the article: left empty until MDPI assigns it at publication. Fill in, e.g.
-  # doi: 10.3390/dronesXXXXXXX
-  # volume: XX
-  # issue: XX
-  # start: XXX   # MDPI article number
+  date-published: 2026-11-25
+  volume: 10
+  issue: 12
+  start: 885  # MDPI article number
+  doi: 10.3390/drones10120885
+  url: "https://doi.org/10.3390/drones10120885"

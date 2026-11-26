@@ -4,9 +4,9 @@ Code accompanying the paper
 
 > Nazarii Savorona, Yaroslav Tereshchenko, Bohdan Bobyl.
 > **Goal-Oriented Joint Source–Channel Coding for UAV Reconnaissance Video Under Contested RF
-> Channels with Detector-Feature Distillation.** *Drones* (MDPI), 2026.
+> Channels with Detector-Feature Distillation.** *Drones* **2026**, *10*(12), 885.
 
-- Paper DOI: **TBD** (to be filled in when the article is published)
+- Paper DOI: [10.3390/drones10120885](https://doi.org/10.3390/drones10120885)
 - Repository URL: https://github.com/nazarsavorona/goal-oriented-jscc-uav
 
 The repository holds what the paper uses and nothing else: the compact codec, the channel
@@ -222,8 +222,8 @@ at the top of the script.
 
 ## Paper tables and figures
 
-Numbering follows the proof of the accepted manuscript and is to be re-checked against the
-published version (**TBD**). "Docstring" means that the script's own docstring describes the
+Numbering follows the published article (its seven figure and eleven table captions match the
+accepted proof). "Docstring" means that the script's own docstring describes the
 measurement; where a row says "see script docstring", the mapping is not pinned by the code
 and should be read from there.
 
@@ -374,7 +374,7 @@ only, not the third-party components listed above, the datasets, or any model we
 
 ## Citation
 
-Please cite the paper (the DOI is a placeholder until publication):
+Please cite the paper:
 
 ```bibtex
 @article{savorona2026goaljscc,
@@ -383,6 +383,9 @@ Please cite the paper (the DOI is a placeholder until publication):
              Contested {RF} Channels with Detector-Feature Distillation},
   journal = {Drones},
   year    = {2026},
-  doi     = {TBD}
+  volume  = {10},
+  number  = {12},
+  pages   = {885},
+  doi     = {10.3390/drones10120885}
 }
 ```
